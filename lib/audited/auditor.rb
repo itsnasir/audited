@@ -41,7 +41,8 @@ module Audited
         class_attribute :non_audited_column_init, instance_accessor: false
         class_attribute :auditing_enabled,        instance_writer: false
         class_attribute :audit_associated_with,   instance_writer: false
-
+        class_attribute :audit_class_name,   instance_writer: false
+        
         self.non_audited_column_init = -> do
           if options[:only]
             except = column_names - Array(options[:only]).flatten.map(&:to_s)
@@ -60,7 +61,9 @@ module Audited
 
         attr_accessor :audit_comment
 
-        has_many :audits, -> { order(version: :asc) }, as: :auditable, class_name: Audited.audit_class.name
+        self.audit_class_name = (options[:class_name] || Audited.audit_class.name)
+
+        has_many :audits, -> { order(version: :asc) }, as: :auditable, class_name: self.audit_class_name
         Audited.audit_class.audited_class_names << to_s
 
         after_create :audit_create if !options[:on] || (options[:on] && options[:on].include?(:create))
